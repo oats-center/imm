@@ -15,7 +15,7 @@ for m = 1:length(field_name)
     subplot(3,2,l);
     for p = 1:length(gd)
       ids{p} = gd{p}.id;
-      scatter(gd{p}.lon, gd{p}.lat, 8, 'filled');
+      scatter(gd{p}.lon, gd{p}.lat, 15, 'filled');
       xlabel('Longtitude');
       ylabel('Latitude');
       title(strcat(field_name{m}, '-', year{n}));
