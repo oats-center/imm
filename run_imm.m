@@ -1,11 +1,10 @@
-function [gd_wpr] = run_imm(gd_mat, fig)
+function [gd_wpr] = run_imm(gd_mat)
 %RUN_IMM perform IMM algorithm on the specified GPS data mat file
 %
 %   Parameters:
 %     gd_mat - GPS data file path and name
-%     fig - flag to output figure or not
 %
-%  Yang Wang 09/08/2018
+%  Yang Wang 09/13/2018
 
   load(gd_mat); % load in GPS data
 
@@ -17,22 +16,21 @@ function [gd_wpr] = run_imm(gd_mat, fig)
   end
 
   dims = 5;
-  hdims = 3;
   nmodels = 3;
 
-  % Sampling interval is 1 second
-  dt = 1;
+  % Define sampling interval
+  dt = NaN;
 
   % Spaces for function handles
   a_func = {};
   a_param = {};
 
   a_func{1} = [];
-  a_func{2} = @f_turn;
-  a_func{3} = [];
+  a_func{2} = [];
+  a_func{3} = @f_turn;
   a_param{1} = [];
-  a_param{2} = {dt};
-  a_param{3} = [];
+  a_param{2} = [];
+  a_param{3} = {dt};
 
   % Space for model parameters
   ind = cell(1,nmodels);
@@ -46,10 +44,10 @@ function [gd_wpr] = run_imm(gd_mat, fig)
 
   % Indices for indexing different model parameters
   ind{1} = [1 2 3 4]';
-  ind{2} = [1 2 3 4 5]';
-  ind{3} = [1 2]';
+  ind{2} = [1 2]';
+  ind{3} = [1 2 3 4 5]';
 
-  % Model 1
+  % Model 1 - NCV
   F{1} = [0 0 1 0;
           0 0 0 1;
           0 0 0 0;
@@ -63,102 +61,136 @@ function [gd_wpr] = run_imm(gd_mat, fig)
   q1 = 0.01;
   Qc{1} = q1 * eye(2);
 
-  [A{1}, Q{1}] = lti_disc(F{1}, L{1}, Qc{1}, dt);
-
-  % Model 2
-  A{2} = @f_turn_dx;
-
-  Qc{2} = 0.05;
-
-  L{2} = [0 0 0 0 1]';
-
-  Q{2} = L{2} * Qc{2} * L{2}' * dt;
-
-  % Model 3
-  A{3} = [1 0;
+  % Model 2 - ST
+  A{2} = [1 0;
           0 1];
 
-  Q{3} = [0.01 0;
+  Q{2} = [0.01 0;
           0 0.01];
 
-  % Process noise variance
-  KF_q1 = 0.01;
-  KF_Qc1 = diag([KF_q1 KF_q1]);
+  % Model 3 - NCT
+  A{3} = @f_turn_dx;
 
-  % Discretization of the continous-time system.
-  [KF_A1,KF_Q1] = lti_disc(F{1}, L{1}, KF_Qc1, dt);
+  L{3} = [0 0 0 0 1]';
+
+  Qc{3} = 0.05;
+
+  Q{3} = L{3} * Qc{3} * L{3}' * dt;
 
   % Measurement models
   H{1} = [1 0 0 0;
           0 1 0 0];
 
-  H{2} = [1 0 0 0 0;
-          0 1 0 0 0];
-
-  H{3} = [1 0;
+  H{2} = [1 0;
           0 1];
 
-  % Initial probabilities
-  mu_ip = [0.01 0.01 0.98];
-  mu_0j = mu_ip;
-
-  % Transition matrix
-  p_ij = [0.70 0.20 0.10;
-          0.20 0.70 0.10;
-          0.45 0.45 0.10];
+  H{3} = [1 0 0 0 0;
+          0 1 0 0 0];
 
   % Measurement noise covariance matrices
-  r1 = 0.05;
-  r2 = 0.15;
-  R{1} = diag([r1 r2]);
-
-  r1 = 0.15;
-  r2 = 0.45;
-  R{2} = diag([r1 r2]);
-
-  r1 = 0.01;
-  r2 = 0.05;
-  R{3} = diag([r1 r2]);
+  R{1} = diag([0.1 1]);
+  R{2} = diag([1 1]);
+  R{3} = diag([0.1 5]);
 
   % Initial estimates
-  % EKF based IMM
-  x_ip1{1} = [0 0 0 0]';
-  x_ip1{2} = [0 0 0 0 0]';
-  x_ip1{3} = [0 0]';
+  x_jhat{1} = [0 0 0 0]';
+  x_jhat{2} = [0 0]';
+  x_jhat{3} = [0 0 0 0 0]';
+
+  % Initial probabilities
+  mu_ip = [0.3 0.4 0.3];
   mu_ip1 = mu_ip;
 
-  P_ip1{1} = diag([0.1 0.1 0.1 0.1]);
-  P_ip1{2} = diag([0.1 0.1 0.1 0.1 0.1]);
-  P_ip1{3} = diag([0.1 0.1]);
+  % Initial state prediction error covariances
+  P_jhat{1} = diag([0.1 0.1 0.1 0.1]);
+  P_jhat{2} = diag([0.1 0.1]);
+  P_jhat{3} = diag([0.1 0.1 0.1 0.1 0.1]);
+
+  % Transition matrix
+  p_ij = [0.70 0.10 0.20;
+          0.20 0.10 0.70;
+          0.45 0.45 0.10];
 
   for m = 1:length(gd_wpr)
     fprintf('\tIMM algorithm is working on %s GPS data\n', gd_wpr{m}.id);
+
     [x, y] = convert_to_xy(gd_wpr{m}.lat, gd_wpr{m}.lon);
 
-    % add UTM coords to the struct
+    % Add UTM coords to the struct
     gd_wpr{m}.x = x;
     gd_wpr{m}.y = y;
 
-    X = [x-x(1) y-y(1)]';
+    % Placeholder for estimated states and labels
+    z = zeros(2, length(gd_wpr{m}.x));
 
-    for l = 1:size(X,2)
-      % EKF based IMM
-      [x_p1,P_p1,c_j1] = eimm_predict(x_ip1,P_ip1,mu_ip1,p_ij,ind,dims, ...
-                                      A,a_func,a_param,Q);
-      [x_ip1,P_ip1,mu_ip1,m1,P1] = eimm_update(x_p1,P_p1,c_j1,ind,dims, ...
-                                              X(:,l),H,[],R,[]);
-      EIMM_MM(:,l) = m1;
-      EIMM_PP(:,:,l) = P1;
+    z(1,:) = (x - x(1))'; % x coords
+    z(2,:) = (y - y(1))'; % y coords
+
+    z_jbar = cell(1, nmodels);
+    S_j = cell(1, nmodels);
+    h = cell(1, nmodels);
+
+    for l = 1:size(z,2)
+      % Get the dt from data
+      if l < size(z,2)
+        dt = (gd{m}.gpsTime(l+1) - gd{m}.gpsTime(l)) / 1000;
+      else
+        dt = 1;
+      end
+
+%      fprintf('Current iteration:\n');
+%      disp(l);
+
+      % Update matrices based on sampling interval
+      [A{1}, Q{1}] = lti_disc(F{1}, L{1}, Qc{1}, dt);
+      Q{3} = L{3} * Qc{3} * L{3}' * dt;
+      a_param{3} = {dt};
+
+      % IMM-NR EKF
+      % Model-conditioned reinitialization (mixing)
+      [x_0j, P_0j, A_j, alpha_j] = eimm_reinit( ...
+        x_jhat, P_jhat, mu_ip1, p_ij, ind, dims);
+
+%      fprintf('Reinitialed conditions:\n');
+%      celldisp(x_0j);
+%      celldisp(P_0j);
+
+      % Model-conditioned filtering
+      for k = 1:nmodels
+        [x_jbar{k}, P_jbar{k}, z_jbar{k}, S_j{k}, x_jhat{k}, P_jhat{k}] = ...
+          eimm_filter( ...
+          x_0j{k}(ind{k}), P_0j{k}(ind{k}, ind{k}), A{k}, Q{k}, H{k}, R{k}, ...
+          z(:,l), [], h{k}, [], a_func{k}, a_param{k});
+      end
+
+      % Model probability update
+      mu_ip1 = eimm_update(z_jbar, S_j, A_j, alpha_j);
+      mu_ip1(find(mu_ip1 < 1e-2)) = 1e-2;
+
+%      fprintf('Model probabilities:\n');
+%      disp(mu_ip1);
+
+      % Final combination
+      [x_hat, P_hat] = eimm_combo(mu_ip1, x_jhat, P_jhat, ind, dims);
+
+%      fprintf('Combined estimates and covariances:\n');
+%      disp(x_hat);
+%      disp(P_hat);
+
+      EIMM_MM(:,l) = x_hat;
+      EIMM_PP(:,:,l) = P_hat;
       EIMM_MU(:,l) = mu_ip1';
-      EIMM_MM_i(:,l) = x_ip1';
-      EIMM_PP_i(:,l) = P_ip1';
     end
 
     % add model probabilities to the struct
     gd_wpr{m}.mu = EIMM_MU';
+    gd_wpr{m}.z = z;
+    gd_wpr{m}.xhat = EIMM_MM;
 
-    clear X
-    clear EIMM_*
+    clear -regexp \w*jbar\b;
+    clear -regexp \w*jhat\b;
+    clear S_j, z;
+    clear h;
     fprintf('\tDone.\n');
   end
 

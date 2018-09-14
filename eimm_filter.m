@@ -44,8 +44,8 @@ function [x_jbar, P_jbar, z_jbar, S_j, x_jhat, P_jhat] = eimm_filter( ...
   else
     W = W(x_0j, param);
   end
-  %P_jbar = A * P_0j * A' + W * Q * W';
-  P_jbar = A * P_0j * A' + Q;
+  P_jbar = A * P_0j * A' + W * Q * W';
+%  P_jbar = A * P_0j * A' + Q;
 
   % Evaluate measurement matrix
   if isnumeric(H)
@@ -76,9 +76,9 @@ function [x_jbar, P_jbar, z_jbar, S_j, x_jhat, P_jhat] = eimm_filter( ...
   end
 
   % Update everything
-%  S_j = (V*R*V' + H*P_jbar*H');
-  S_j = R + H*P_jbar*H';
-  K_j = P_jbar*H'*inv(S_j);
+  S_j = (V*R*V' + H*P_jbar*H');
+%  S_j = R + H*P_jbar*H';
+  K_j = P_jbar*H'/S_j;
   z_jbar = z - z_p;
   x_jhat = x_jbar + K_j * z_jbar;
   P_jhat = P_jbar - K_j*S_j*K_j';

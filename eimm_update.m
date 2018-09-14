@@ -7,8 +7,8 @@ function [mu_ip1] = eimm_update(z_jbar, S_j, A_j, alpha_j)
   beta_j = zeros(1,m);
   aba_sum = zeros(1,m);
   for k = 1:m
-    beta_j(k) = 0.5*(z_jbar{k})'*inv(S_j{k})*z_jbar{k} + ...
-      0.5*log(norm(2*pi*S_j{k}));
+    beta_j(k) = 0.5*(z_jbar{k})'*(S_j{k}\z_jbar{k}) + ...
+      0.5*log(det(2*pi*S_j{k}));
     aba_sum(k) = A_j(k) + beta_j(k) + alpha_j(k);
   end
 
