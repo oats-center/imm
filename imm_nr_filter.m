@@ -1,5 +1,5 @@
-function [x_jbar, P_jbar, z_jbar, S_j, x_jhat, P_jhat] = eimm_filter( ...
-  x_0j, P_0j, A, Q, H, R, z, W, h, V, a, param)
+function [x_jbar, P_jbar, z_jbar, S_j, x_jhat, P_jhat] = imm_nr_filter( ...
+  x_0j, P_0j, A, Q, H, R, z, W, h, a, param)
 
   % Apply defaults
   if isempty(A)
@@ -10,9 +10,6 @@ function [x_jbar, P_jbar, z_jbar, S_j, x_jhat, P_jhat] = eimm_filter( ...
   end
   if isempty(W)
     W = eye(size(x_0j,1),size(Q,2));
-  end
-  if isempty(V)
-    V = eye(size(R,1));
   end
 
   % Perform filtering
@@ -40,12 +37,11 @@ function [x_jbar, P_jbar, z_jbar, S_j, x_jhat, P_jhat] = eimm_filter( ...
   if isnumeric(W)
     % nop
   elseif isstr(W) | strcmp(class(W),'function_handle')
-    W = feval(W, x_0j, param);
+    W = feval(W, x_jbar, param);
   else
-    W = W(x_0j, param);
+    W = W(x_jbar, param);
   end
   P_jbar = A * P_0j * A' + W * Q * W';
-%  P_jbar = A * P_0j * A' + Q;
 
   % Evaluate measurement matrix
   if isnumeric(H)
@@ -67,17 +63,9 @@ function [x_jbar, P_jbar, z_jbar, S_j, x_jhat, P_jhat] = eimm_filter( ...
     z_p = h(x_jbar, param);
   end
 
-  if isnumeric(V)
-    % nop
-  elseif isstr(V) | strcmp(class(V),'function_handle')
-    V = feval(V, x_0j, param);
-  else
-    V = V(x_0j, param);
-  end
-
   % Update everything
-  S_j = (V*R*V' + H*P_jbar*H');
-%  S_j = R + H*P_jbar*H';
+%  S_j = (V*R*V' + H*P_jbar*H');
+  S_j = R + H*P_jbar*H';
   K_j = P_jbar*H'/S_j;
   z_jbar = z - z_p;
   x_jhat = x_jbar + K_j * z_jbar;

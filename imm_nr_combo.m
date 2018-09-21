@@ -1,4 +1,4 @@
-function [x_hat, P_hat] = eimm_combo(mu_ip1, x_jhat, P_jhat, ind, dims)
+function [x_hat, P_hat] = imm_nr_combo(mu_ip1, x_jhat, P_jhat, ind, dims)
 
   % Get the number of models
   m = length(x_jhat);

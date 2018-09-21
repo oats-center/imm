@@ -1,5 +1,5 @@
-function [x_0j, P_0j, A_j, alpha_j] = eimm_reinit( ...
-  x_ip, P_ip, MU_ip, p_ij, ind, dims)
+function [x_0j, P_0j, A_j, alpha_j] = imm_nr_reinit( ...
+  x_ip, P_ip, MU_ip, p_ij, a_j, ind, dims)
 %EIMM_REINIT Model-conditioned reinitialization step
 %
 % Syntax:
@@ -23,10 +23,10 @@ function [x_0j, P_0j, A_j, alpha_j] = eimm_reinit( ...
   m = size(x_ip,2);
 
   % Compute a_{k-1}^{n}
-  a_j = zeros(1,m);
-  for l = 1:m
-    a_j(l) = -log(MU_ip(l));
-  end
+%  a_j = zeros(1,m);
+%  for l = 1:m
+%    a_j(l) = -log(MU_ip(l));
+%  end
 
   % Compute A_j
   A_j = zeros(1,m);
