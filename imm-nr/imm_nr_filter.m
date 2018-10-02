@@ -1,5 +1,5 @@
-function [x_jbar, P_jbar, z_jbar, S_j, x_jhat, P_jhat] = imm_nr_filter( ...
-  x_0j, P_0j, A, Q, H, R, z, W, h, a, param)
+function [x_jbar, P_jbar, z_jbar, S_j, x_jhat, P_jhat, sigma_j] = ...
+  imm_nr_filter(x_0j, P_0j, A, Q, H, R, z, W, h, a, param)
 
   % Apply defaults
   if isempty(A)
@@ -65,9 +65,16 @@ function [x_jbar, P_jbar, z_jbar, S_j, x_jhat, P_jhat] = imm_nr_filter( ...
 
   % Update everything
 %  S_j = (V*R*V' + H*P_jbar*H');
+  z_jbar = z - z_p; % innovation
   S_j = R + H*P_jbar*H';
+
+  sigma_j = z_jbar'/S_j*z_jbar;
+%  if sigma_j > 10
+%    P_jbar = A * P_0j * A' + 10 * Q;
+%    S_j = R + H*P_jbar*H';
+%  end
+
   K_j = P_jbar*H'/S_j;
-  z_jbar = z - z_p;
   x_jhat = x_jbar + K_j * z_jbar;
   P_jhat = P_jbar - K_j*S_j*K_j';
 
