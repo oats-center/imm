@@ -1,4 +1,4 @@
-function [x_0j, P_0j, c_j] = imm_nr_reinit( ...
+function [x_0j, P_0j, c_j, mu_ij] = imm_nr_reinit( ...
   x_hat_km1, P_hat_km1, imm_mu_km1, p_ij, ind, dims)
 
   % Get the number of models
@@ -14,9 +14,9 @@ function [x_0j, P_0j, c_j] = imm_nr_reinit( ...
 
   % Compute mixing probabilities
   mu_ij = zeros(m,m);
-  for k = 1:m
-    for l = 1:m
-      mu_ij(k,l) = p_ij(k,l) * imm_mu_km1(k) / c_j(k);
+  for jj = 1:m
+    for ii = 1:m
+      mu_ij(jj,ii) = p_ij(jj,ii) * imm_mu_km1(jj) / c_j(ii);
     end
   end
 

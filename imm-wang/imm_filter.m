@@ -1,5 +1,5 @@
 function [x_jbar, P_jbar, z_jbar, S_j, K_j, x_jhat, P_jhat] = ...
-  imm_filter_kf(x_0j, P_0j, A, Q, H, R, Z)
+  imm_filter(x_0j, P_0j, A, Q, H, R, Z, param)
 
   % Check defaults
   if isempty(A)
@@ -7,6 +7,10 @@ function [x_jbar, P_jbar, z_jbar, S_j, K_j, x_jhat, P_jhat] = ...
   if isempty(Q)
   end
   if isempty(H)
+  end
+
+  if isstr(A) | strcmp(class(A),'function_handle')
+    A = feval(A, x_0j, param);
   end
 
   % Perform filtering
