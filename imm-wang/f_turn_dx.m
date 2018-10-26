@@ -4,7 +4,7 @@ function dF = f_turn_dx(x, param)
   w = x(5);
   dF = zeros(5,5);
 
-  if w == 0
+  if w < 1e-10
     dF(1,1) = 1;
     dF(1,3) = dt;
     dF(1,5) = -0.5*(dt^2)*x(4);
