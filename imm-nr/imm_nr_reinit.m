@@ -1,94 +1,49 @@
-function [x_0j, P_0j, A_j, alpha_j] = imm_nr_reinit( ...
-  x_ip, P_ip, MU_ip, p_ij, a_j, ind, dims)
-%IMM_NR_REINIT Model-conditioned reinitialization step
-%
-% Syntax:
-%   [x_0j, P_0j, A_j, alpha_j] = IMM_NR_REINIT(x_ip, P_ip, MU_ip, p_ij,
-%                                              ind, dims)
-%
-% In:
-%   x_ip  - Cell array containing N^j x 1 mean state estimate vector for
-%           each model j after update step of previous time step
-%   P_ip  - Cell array containing N^j x N^j state covariance matrix for
-%           each model j after update step of previous time step
-%   MU_ip - Vector containing the model probabilities at previous time step
-%   p_ij  - Model transition matrix
-%
-% Out:
-%   x_0j    - Reinitialized (mixed) states
-%   P_0j    - Reinitialized (mixed) state covariance
-%   A_j     - Minimum of the exponent for model probabilities in exponent form
-%   alpha_j - Parameter needed in the numerically robust IMM
+function [x_0j, P_0j, A_j, alpha_j, mu_ij] = imm_nr_reinit( ...
+  x_hat_km1, P_hat_km1, imm_nr_mu_km1, p_ij, a_km1, ind, dims)
 
   % The number of models
-  m = size(x_ip,2);
-
-  % Compute a_{k-1}^{n}
-%  a_j = zeros(1,m);
-%  for l = 1:m
-%    % Hacky trick
-%    if MU_ip(l) < 1e-1
-%      MU_ip(l) = 1e-1;
-%    end
-%    a_j(l) = -log(MU_ip(l));
-%  end
+  m = size(x_hat_km1,2);
 
   % Compute A_j
   A_j = zeros(1,m);
-  for l = 1:m
-    A_j(l) = min(a_j);
+  for jj = 1:m
+    A_j(jj) = min(a_km1);
   end
-
-%  %% Verification step (debug)
-%  MU_Aj = zeros(1,m);
-%  for l = 1:m
-%    for k = 1:m
-%      MU_Aj(l) = MU_Aj(l) + p_ij(k,l) * MU_ip(l);
-%    end
-%    MU_Aj(l) = exp(A_j(l))*MU_Aj(l);
-%    if MU_Aj(l) <= 0
-%      fprintf('\t*************MU_Aj <= 0**************\n');
-%    end
-%  end
-%  alpha_j_temp = -log(MU_Aj);
 
   % Compute alpha_j
   alpha_j = zeros(1,m);
-  for l = 1:m
-    for k = 1:m
-      alpha_j(l) = alpha_j(l) + p_ij(k,l)*exp(-(a_j(k)-A_j(l)));
+  for jj = 1:m
+    for ii = 1:m
+      alpha_j(jj) = alpha_j(jj) + p_ij(ii,jj) * exp(-(a_km1(ii)-A_j(jj)));
     end
-    alpha_j(l) = -log(alpha_j(l));
-%    if alpha_j(l) < 0
-%      fprintf('\t*************alpha_j < 0**************\n');
-%    end
+    alpha_j(jj) = -log(alpha_j(jj));
   end
 
   % Mixing probabilities
-  MU_ij = zeros(m,m);
-  for l = 1:m
-    for k = 1:m
-        MU_ij(l,k) = p_ij(l,k) * exp(-(a_j(l) - A_j(k) + alpha_j(k)));
+  mu_ij = zeros(m,m);
+  for ii = 1:m
+    for jj = 1:m
+      mu_ij(ii,jj) = p_ij(ii,jj) * exp(-(a_km1(ii) - A_j(jj) + alpha_j(jj)));
     end
   end
 
-  % Calculate the mixed state mean for each filter
+  % Reinitialize system state (mixed state)
   x_0j = cell(1,m);
-  for l = 1:m
-    x_0j{l} = zeros(dims,1);
-    for k = 1:m
-        x_0j{l}(ind{k}) = x_0j{l}(ind{k}) + x_ip{k}*MU_ij(k,l);
+  for k = 1:m
+    x_0j{k} = zeros(dims,1);
+    for l = 1:m
+      x_0j{k}(ind{l}) = x_0j{k}(ind{l}) + x_hat_km1{l} * mu_ij(l,k);
     end
   end
 
-  % Calculate the mixed state covariance for each filter
+  % Calculate state covariance (mixed covariance)
   P_0j = cell(1,m);
-  for l = 1:m
-    P_0j{l} = zeros(dims,dims);
-    for k = 1:m
-        P_0j{l}(ind{k},ind{k}) = P_0j{l}(ind{k},ind{k}) + ...
-          MU_ij(k,l)*(P_ip{k} + ...
-          (x_0j{l}(ind{k})-x_ip{k})*(x_0j{l}(ind{k})-x_ip{k})');
+  for k = 1:m
+    P_0j{k} = zeros(dims,dims);
+    for l = 1:m
+      P_0j{k}(ind{l},ind{l}) = P_0j{k}(ind{l},ind{l}) + ...
+        mu_ij(l,k) * (P_hat_km1{l} + ...
+        (x_hat_km1{l} - x_0j{k}(ind{l})) * (x_hat_km1{l} - x_0j{k}(ind{l}))');
     end
   end
 

@@ -1,42 +1,36 @@
-%
-% A coordinated turn model for extended IMM filter demonstration
-%
-% 
+function x_k = f_turn(x, param)
 
-% Copyright (C) 2007 Jouni Hartikainen
-%
-% This software is distributed under the GNU General Public
-% Licence (version 2 or later); please refer to the file
-% Licence.txt, included with the software, for details.
+  dt = param{1};
+  w = x(5);
+  F = zeros(5,5);
 
-function x_k = f_turn(x,param)
-    
-    dt = param{1};
-    w = x(5);
-    if w == 0
-        coswt = cos(w*dt);
-        coswto = cos(w*dt)-1;
-        coswtopw = 0;  
-        
-        sinwt = sin(w*dt);
-        sinwtpw = dt;
-    else
-        coswt = cos(w*dt);
-        coswto = cos(w*dt)-1;
-        coswtopw = coswto/w;  
-        
-        sinwt = sin(w*dt);
-        sinwtpw = sinwt/w;
-    end
-        
-    F = [1 0 sinwtpw    coswtopw  0;...
-         0 1 -coswtopw  sinwtpw   0;...
-         0 0 coswt      -sinwt    0;...
-         0 0 sinwt      coswt     0;...
-         0 0 0          0         1];
-    x_k = F*x;
-    
-    
-    
-    
-    
+  if w == 0
+    F(1,1) = 1;
+    F(1,3) = dt;
+
+    F(2,1) = 1;
+    F(2,4) = dt;
+
+    F(3,3) = 1;
+    F(4,4) = 1;
+  else
+    F(1,1) = 1;
+    F(1,3) = sin(w*dt) / w;
+    F(1,4) = (cos(w*dt) - 1) / w;
+
+    F(2,2) = 1;
+    F(2,3) = (1 - cos(w*dt)) / w;
+    F(2,4) = sin(w*dt) / w;
+
+    F(3,3) = cos(w*dt);
+    F(3,4) = -sin(w*dt);
+
+    F(4,3) = sin(w*dt);
+    F(4,4) = cos(w*dt);
+
+    F(5,5) = 1;
+  end
+
+  x_k = F*x;
+
+end %EOF
