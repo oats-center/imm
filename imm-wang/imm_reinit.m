@@ -1,4 +1,4 @@
-function [x_0j, P_0j, c_j, mu_ij] = imm_nr_reinit( ...
+function [x_0j, P_0j, c_j, mu_ij] = imm_reinit( ...
   x_hat_km1, P_hat_km1, imm_mu_km1, p_ij, ind, dims)
 
   % Get the number of models
@@ -25,7 +25,7 @@ function [x_0j, P_0j, c_j, mu_ij] = imm_nr_reinit( ...
   for k = 1:m
     x_0j{k} = zeros(dims,1);
     for l = 1:m
-        x_0j{k}(ind{l}) = x_0j{k}(ind{l}) + x_hat_km1{l} * mu_ij(l,k);
+      x_0j{k}(ind{l}) = x_0j{k}(ind{l}) + x_hat_km1{l} * mu_ij(l,k);
     end
   end
 
@@ -34,9 +34,9 @@ function [x_0j, P_0j, c_j, mu_ij] = imm_nr_reinit( ...
   for k = 1:m
     P_0j{k} = zeros(dims,dims);
     for l = 1:m
-        P_0j{k}(ind{l},ind{l}) = P_0j{k}(ind{l},ind{l}) + ...
-          mu_ij(l,k) * (P_hat_km1{l} + ...
-          (x_hat_km1{l} - x_0j{k}(ind{l})) * (x_hat_km1{l} - x_0j{k}(ind{l}))');
+      P_0j{k}(ind{l},ind{l}) = P_0j{k}(ind{l},ind{l}) + ...
+        mu_ij(l,k) * (P_hat_km1{l} + ...
+        (x_hat_km1{l} - x_0j{k}(ind{l})) * (x_hat_km1{l} - x_0j{k}(ind{l}))');
     end
   end
 
