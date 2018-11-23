@@ -2,4 +2,4 @@ imm-old/*
 imm-wang/lti_disc.m
 results/*
 mat-files/exp/*
-run_imm_sim*
+sims/*
