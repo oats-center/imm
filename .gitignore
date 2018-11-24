@@ -3,3 +3,4 @@ imm-wang/lti_disc.m
 results/*
 mat-files/exp/*
 sims/*
+run_imm_nr.m
