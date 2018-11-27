@@ -109,8 +109,8 @@ function [gd_imm] = run_imm_single(gd)
   % IMM-KF-EKF initial conditions
   imm_mu = mu_i;
 
-  x_jhat{1} = [x(1) y(1) 0 0]';
-  x_jhat{2} = [x(1) y(1) 0 0 0]';
+  x_jhat{1} = [z(1,1) z(2,1) 0 0]';
+  x_jhat{2} = [z(1,1) z(2,1) 0 0 0]';
 
   P_jhat{1} = diag([0.1 0.1 0.1 0.1]);
   P_jhat{2} = diag([0.1 0.1 0.1 0.1 0.1]);
@@ -128,8 +128,8 @@ function [gd_imm] = run_imm_single(gd)
 %        outage = 0;
 %        fprintf('\t\tAt iteration %d\n\tx=%f\ty=%f\tdt=%f\n', ...
 %          l, z(1,l), z(2,l), dt);
-%        fprintf('\t\tm1p=%f\tm2p=%f\n', ...
-%          imm_mu(1), imm_mu(2));
+%      fprintf('\t\tm1p=%f\tm2p=%f\n', ...
+%        imm_mu(1), imm_mu(2));
 %        if dt > 10
 %          fprintf('\t\t**** Possible GPS outage occured! ****\n');
 %          outage = 1;
@@ -169,10 +169,10 @@ function [gd_imm] = run_imm_single(gd)
 
     % Update model probability
     [Li, imm_mu] = imm_update(imm_mu, z_jbar, S_j, c_j, ...
-      gd_imm.speed(l), sensor_mu, sensor_var, outage);
+      gd_imm.speed(l), sensor_mu, sensor_var, outage, l);
 
-%      fprintf('\t\tLi(1)=%f\tLi(2)=%f\n', ...
-%        Li(1), Li(2));
+%    fprintf('\t\tLi(1)=%f\tLi(2)=%f\n', ...
+%      Li(1), Li(2));
 
     % Final combination
     [x_hat, P_hat] = imm_combo(imm_mu, x_jhat, P_jhat, ind, dims);

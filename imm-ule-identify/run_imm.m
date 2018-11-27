@@ -61,7 +61,7 @@ function [gd_imm] = run_imm(gd)
       cnt = 0;
     else
       fprintf('\tBreak %s data into %d parts for IMM due to outages:\n', ...
-        gd_imm{m}.id, length(gd_imm{m}.outages));
+        gd_imm{m}.id, length(gd_imm{m}.outages)+1);
       cnt = length(gd_imm{m}.outages)+1;
     end
 
