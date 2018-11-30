@@ -142,7 +142,7 @@ function [gd_imm] = run_imm_single(gd)
 
     % Compute sensor mean and var up to this iteration with labeled
     % sensor data
-    [sensor_mu, sensor_var]  = imm_sensor(IMM_LABELS, gd_imm.speed(1:l));
+%    [sensor_mu, sensor_var]  = imm_sensor(IMM_LABELS, gd_imm.speed(1:l));
 %      fprintf('\t\tsensor_mu(1)=%f\tsensor_mu(2)=%f\n', ...
 %        sensor_mu(1), sensor_mu(2));
 %      fprintf('\t\tsensor_var(1)=%f\tsensor_var(2)=%f\n', ...
@@ -168,8 +168,7 @@ function [gd_imm] = run_imm_single(gd)
     end
 
     % Update model probability
-    [Li, imm_mu] = imm_update(imm_mu, z_jbar, S_j, c_j, ...
-      gd_imm.speed(l), sensor_mu, sensor_var, outage, l);
+    [Li, imm_mu] = imm_update(imm_mu, z_jbar, S_j, c_j, l);
 
 %    fprintf('\t\tLi(1)=%f\tLi(2)=%f\n', ...
 %      Li(1), Li(2));
@@ -188,8 +187,6 @@ function [gd_imm] = run_imm_single(gd)
 
   gd_imm.mu = IMM_MU';
   gd_imm.z = z;
-  gd_imm.sensor_mu = sensor_mu;
-  gd_imm.sensor_var = sensor_var;
   gd_imm.labels = IMM_LABELS';
 
   clear x;

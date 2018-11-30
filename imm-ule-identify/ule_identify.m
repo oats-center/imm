@@ -1,8 +1,5 @@
 function [combine_gd_ul] = ule_identify(combine_gd_imm, kart_gd_imm)
 
-  % allocate unloading events indices
-  I_ul = cell(length(combine_gd_imm), 1);
-
   % copy the original struct contents
   for m = 1:length(combine_gd_imm)
     for fn = fieldnames(combine_gd_imm{m})'
@@ -31,25 +28,21 @@ function [combine_gd_ul] = ule_identify(combine_gd_imm, kart_gd_imm)
       % if the distance is below the hard threshold
       if (dis <= 15) & (abs((combine_gd_ul{m}.mu(mm,1) - ...
         mean(kart_gd_imm{1}.mu(I,1)))) < 0.1)
-        if ule_lock == 0 & isnan(start_ts)
+        if (isnan(start_ts)) & (~ule_lock)
           start_ts = combine_gd_ul{m}.gpsTime(mm);
-%          fprintf('\t\t\tPotential ULE at %d!\n', start_ts);
           ule_lock = 1;
         end
       else
-        if ule_lock & ~isnan(start_ts)
+        if (~isnan(start_ts)) & (ule_lock)
           end_ts = combine_gd_ul{m}.gpsTime(mm);
-%          fprintf('\t\t\tULE ends at %d!\n', end_ts);
-          ule_lock = 0;
-
-          if (((end_ts - start_ts) / 1000) > 1) | ...
+          ule_num = ule_num + 1;
+          if (((end_ts - start_ts) / 1000) > 10) | ...
             (((end_ts - start_ts) / 1000) < 300)
             ule_num = ule_num + 1;
             combine_gd_ul{m}.ule_ts{ule_num} = [start_ts end_ts];
-            start_ts = nan;
-            end_ts = nan;
-            ule_lock = 0;
           end
+          start_ts = nan;
+          ule_lock = 0;
         end
       end
     end
